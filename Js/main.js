@@ -18,32 +18,35 @@ var target = document.getElementById("container");
 //         TweenMax.to(".i-hold", 0.5, {left:'+=' + event.distanceX / 1.5});
 //     };
 // });
-
+// 生成主场景
 init(50,"container",Width,Height,main,LEvent.INIT);
 
 
 
 // 声明变量
 // 进度条显示层，背景层，方块绘制层，方块预览层
-var playLayer,backLayer,graphicsLayer,obstacleLayer;
-var play_v;
-var r,vx,vy;
-var keydown,speed;
-var score;
-
-var scoreText,speedText;
+var playLayer,// 舞台
+	backLayer,// 背景层
+	graphicsLayer,
+	obstacleLayer,
+	play_v,
+	r,vx,vy,
+	keydown,speed,
+	score,
+	scoreText,// 统计砖块撞击次数
+	speedText;// 预留速度缓动显示
 
 function main(){
 	backLayer = new LSprite();
 	backLayer.graphics.drawRect(1,"#DBDBDB",[0,0,LGlobal.width,LGlobal.height],true,"#DBDBDB");
-	LStage.setDebug(true);
+	LGlobal.setDebug(true);
 	LSystem.screen(LStage.FULL_SCREEN);
 
 	//背景显示
 	addChild(backLayer);
 	gameInit();
 }
-//读取完所有图片，进行游戏标题画面的初始化工作
+// 进行游戏标题画面的初始化工作
 function gameInit(){
 	//显示游戏标题
 	// var title = new LTextField();
@@ -54,7 +57,7 @@ function gameInit(){
 	// title.text = "游戏";
 	// title.font = "微软雅黑";
 	// backLayer.addChild(title);
-	//显示说明文
+	// 显示说明文
 	// backLayer.graphics.drawRect(1,"#ffffff",[50,240,220,40]);
 	var txtClick = new LTextField();
 	txtClick.size = 19;
@@ -64,13 +67,12 @@ function gameInit(){
 	txtClick.x = (LGlobal.width - txtClick.getWidth())/2;
 	txtClick.y = (LGlobal.height - txtClick.getHeight())/2;
 	backLayer.addChild(txtClick);
-
 	backLayer.addEventListener(LMouseEvent.MOUSE_UP,gameToStart);
 }
 
-//游戏画面初始化
+// 游戏画面初始化
 function gameToStart(){
-	//背景层清空
+	// 背景层清空
 	backLayer.die();
 	backLayer.removeAllChild();
 	
@@ -80,6 +82,8 @@ function gameToStart(){
 	
 	LEvent.addEventListener(LGlobal.window,LKeyboardEvent.KEY_DOWN,onkeydown);
 	LEvent.addEventListener(LGlobal.window,LKeyboardEvent.KEY_UP,onkeyup);
+	backLayer.addEventListener(LMouseEvent.MOUSE_DOWN, onmousedown);
+	backLayer.addEventListener(LMouseEvent.MOUSE_UP, onmouseup);
 	
 	keydown=0;
 	play_v=12;
@@ -144,10 +148,13 @@ function gameToStart(){
 
 function onframe(){
 	
-	if(keydown==1&&playLayer.x>0) playLayer.x-=play_v;
-	else if(keydown==2&&playLayer.x+playLayer.getWidth()<LGlobal.width) playLayer.x+=play_v;
+	if (keydown == 1 && playLayer.x > 0) {
+		playLayer.x -= play_v;
+	} else if (keydown == 2 && playLayer.x + playLayer.getWidth() < LGlobal.width) {
+		playLayer.x += play_v;
+	}
 	
-	if(move()==0) return;
+	if(move() === 0) return;
 	
 	check(playLayer);
 	var i,iswin=1;
@@ -162,8 +169,9 @@ function onframe(){
 			break;
 		}
 	}
-	if(iswin==1)
+	if(iswin==1){
 		gameOver();
+	}
 }
 
 
@@ -193,27 +201,22 @@ function move(){
 	
 	return 1;
 }
-function check(layer){
-	var chec=check_collect(graphicsLayer,layer);
-	
-	if(chec!=0){
-		if(chec==1){
-			vy*=-1;
-			graphicsLayer.y=layer.y-r*2-2;
+function check(layer) {
+	var chec = check_collect(graphicsLayer, layer);
+	if (chec !== 0) {
+		if (chec == 1) {
+			vy *= -1;
+			graphicsLayer.y = layer.y - r * 2 - 2;
+		} else if (chec == 2) {
+			vy *= -1;
+			graphicsLayer.y = layer.y + layer.getHeight() + 2;
+		} else if (chec == 3) {
+			vx *= -1;
+			graphicsLayer.x = layer.x - r * 2 - 2;
+		} else if (chec == 4) {
+			vx *= -1;
+			graphicsLayer.x = layer.x + layer.getWidth() + 2;
 		}
-		else if(chec==2){
-			vy*=-1;
-			graphicsLayer.y=layer.y+layer.getHeight()+2;
-		}
-		else if(chec==3){
-			vx*=-1;
-			graphicsLayer.x=layer.x-r*2-2;
-		}
-		else if(chec==4){
-			vx*=-1;
-			graphicsLayer.x=layer.x+layer.getWidth()+2;
-		}
-		
 	}
 	return chec;
 }
@@ -240,7 +243,7 @@ function check_collect(layer1,layer2){
 
 //键盘按下事件
 function onkeydown(event){
-	if(keydown != 0)return;
+	if(keydown !== 0)return;
 	if(event.keyCode == 37){//left
 		keydown=1;
 	}else if(event.keyCode == 38){//up
@@ -262,8 +265,21 @@ function onkeydown(event){
 		//myKey.keyControl = "down";
 	}
 }
-//键盘弹起事件
+// 键盘弹起事件
 function onkeyup(event){
+	keydown=0;
+}
+// 触摸事件
+function onmousedown(event){
+	if(keydown !== 0)return;
+	if(event.offsetX < (LGlobal.width /2)){//left
+		keydown=1;
+	}else if(event.offsetX > (LGlobal.width /2)){//right
+		keydown=2;
+	}
+}
+// 触摸事件结束
+function onmouseup(event){
 	keydown=0;
 }
 
